@@ -1,0 +1,7 @@
+{
+  "name": "Sai Santosh Traders",
+  "description": "Hyderabad's premier quick-commerce grocery delivery service delivering fresh dairy, premium rice & flour, dals, oils, snacks, and biscuits in 15–20 minutes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
