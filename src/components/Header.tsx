@@ -3,29 +3,35 @@ import { Address, NotificationItem } from '../types';
 
 interface HeaderProps {
   currentAddress: Address;
+  customerName?: string;
   onOpenAddressModal: () => void;
   onOpenNotifications: () => void;
   onOpenProfile: () => void;
-  onOpenAdmin: () => void;
-  isAdminLoggedIn: boolean;
+  onLogout: () => void;
   notifications: NotificationItem[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
   currentAddress,
+  customerName = 'Sai Santosh',
   onOpenAddressModal,
   onOpenNotifications,
   onOpenProfile,
-  onOpenAdmin,
-  isAdminLoggedIn,
+  onLogout,
   notifications
 }) => {
   const unreadCount = notifications.filter(n => !n.read).length;
+  const initials = customerName
+    .split(' ')
+    .map(p => p[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'SS';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#e6ecf5] shadow-xs">
       <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
-        {/* Brand & Location Selector */}
+        {/* Brand & Hyderabad Location Selector */}
         <div className="flex items-center gap-3 min-w-0">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-2 shrink-0">
@@ -36,7 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[16px] font-extrabold text-[#006c49] tracking-tight leading-tight">
                 Sai Santosh
               </span>
-              <span className="text-[10px] font-bold text-[#3c4a42] uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#4a5850] uppercase tracking-wider">
                 Traders • Hyderabad
               </span>
             </div>
@@ -56,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="material-symbols-outlined text-[14px] text-[#006c49] animate-pulse">location_on</span>
                 Delivering to {currentAddress.tag}
               </span>
-              <span className="material-symbols-outlined text-[16px] text-[#3c4a42] group-hover:translate-y-0.5 transition-transform">
+              <span className="material-symbols-outlined text-[16px] text-[#4a5850] group-hover:translate-y-0.5 transition-transform">
                 expand_more
               </span>
             </div>
@@ -65,34 +71,15 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-[13px] font-bold text-[#141b2b] truncate max-w-[170px] sm:max-w-[240px] md:max-w-[320px]">
                 {currentAddress.locality}, Hyderabad
               </span>
-              <span className="text-[11px] text-[#3c4a42]/70 hidden md:inline truncate max-w-[200px]">
+              <span className="text-[11px] text-[#4a5850]/70 hidden md:inline truncate max-w-[200px]">
                 • {currentAddress.fullAddress}
               </span>
             </div>
           </button>
         </div>
 
-        {/* Right Side: Speed Badge, Admin Switcher, Notifications, Profile */}
+        {/* Right Side: Speed Badge, Notifications, Profile, Logout */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Admin Portal Gateway Button */}
-          <button
-            type="button"
-            onClick={onOpenAdmin}
-            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
-              isAdminLoggedIn
-                ? 'bg-slate-900 text-emerald-400 border-slate-700 hover:bg-slate-800 shadow-xs'
-                : 'bg-[#f1f3ff] text-[#006c49] border-[#e6ecf5] hover:bg-[#caead6]'
-            }`}
-            title="Open Sai Santosh Admin & Live Dispatch Hub"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              {isAdminLoggedIn ? 'dashboard' : 'admin_panel_settings'}
-            </span>
-            <span className="hidden sm:inline">
-              {isAdminLoggedIn ? 'Admin Hub' : 'Admin'}
-            </span>
-          </button>
-
           {/* 15-20 min Delivery Pill */}
           <div className="hidden md:flex items-center gap-1.5 bg-[#caead6]/70 border border-[#006c49]/20 px-2.5 py-1 rounded-full text-[#00422b]">
             <span className="material-symbols-outlined text-[15px] text-[#006c49] animate-bounce">bolt</span>
@@ -124,11 +111,21 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="User Profile"
           >
             <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-[#006c49] to-[#10b981] text-white flex items-center justify-center text-[12px] font-bold shadow-xs">
-              SS
+              {initials}
             </div>
             <span className="hidden sm:inline text-[12px] font-bold text-[#141b2b]">
-              Sai Santosh
+              {customerName}
             </span>
+          </button>
+
+          {/* Exit / Logout to Landing Page */}
+          <button
+            type="button"
+            onClick={onLogout}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#f8fafc] hover:bg-red-50 text-[#4a5850] hover:text-red-600 border border-[#e6ecf5] flex items-center justify-center transition-all cursor-pointer"
+            title="Log out back to Landing Page"
+          >
+            <span className="material-symbols-outlined text-[18px]">logout</span>
           </button>
         </div>
       </div>

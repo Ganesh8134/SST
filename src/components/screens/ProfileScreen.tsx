@@ -4,6 +4,8 @@ import { ProductCard } from '../ProductCard';
 
 interface ProfileScreenProps {
   currentAddress: Address;
+  customerName?: string;
+  customerPhone?: string;
   orders: Order[];
   wishlistProducts: Product[];
   cartItemsMap: Record<string, number>;
@@ -15,10 +17,13 @@ interface ProfileScreenProps {
   onRemoveFromCart: (product: Product) => void;
   onOpenDetails: (product: Product) => void;
   onToggleWishlist: (product: Product) => void;
+  onLogout: () => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   currentAddress,
+  customerName = 'Sai Santosh',
+  customerPhone = '+91 98450 12345',
   orders,
   wishlistProducts,
   cartItemsMap,
@@ -29,9 +34,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onAddToCart,
   onRemoveFromCart,
   onOpenDetails,
-  onToggleWishlist
+  onToggleWishlist,
+  onLogout
 }) => {
-  const [activeSection, setActiveSection] = useState<'orders' | 'wishlist' | 'support'>('orders');
+  const [activeSection, setActiveSection] = useState<'orders' | 'wishlist' | 'settings' | 'support'>('orders');
+
+  const initials = customerName
+    .split(' ')
+    .map(p => p[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'SS';
 
   return (
     <div className="max-w-4xl mx-auto px-4 pb-28 animate-fade-in flex flex-col gap-5 pt-2">
@@ -39,17 +52,17 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       <div className="bg-gradient-to-r from-[#00422b] to-[#006c49] text-white rounded-3xl p-5 sm:p-6 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-3xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-white text-[24px] font-black shadow-inner border border-white/30">
-            SS
+            {initials}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-[20px] font-black">Sai Santosh</h1>
+              <h1 className="text-[20px] font-black">{customerName}</h1>
               <span className="text-[10px] font-extrabold bg-[#caead6] text-[#00422b] px-2 py-0.5 rounded-full uppercase tracking-wider">
-                VIP Member
+                Active Member
               </span>
             </div>
             <p className="text-[12px] text-white/80 mt-0.5">
-              +91 98450 12345 • santosh.hyd@example.com
+              {customerPhone} • {customerName.toLowerCase().replace(/\s+/g, '')}@example.com
             </p>
             <p className="text-[11px] text-[#4edea3] font-bold mt-1 flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">location_on</span>
@@ -58,17 +71,29 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
         </div>
 
-        {/* Quick stat pill */}
-        <div className="bg-white/15 backdrop-blur-xs px-4 py-2.5 rounded-2xl border border-white/20 flex gap-4 text-center">
-          <div>
-            <span className="text-[18px] font-black">{orders.length}</span>
-            <span className="text-[10px] text-white/80 block uppercase">Orders</span>
+        {/* Quick stat pill & Logout */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="bg-white/15 backdrop-blur-xs px-4 py-2.5 rounded-2xl border border-white/20 flex gap-4 text-center">
+            <div>
+              <span className="text-[18px] font-black">{orders.length}</span>
+              <span className="text-[10px] text-white/80 block uppercase">Orders</span>
+            </div>
+            <div className="w-px bg-white/20" />
+            <div>
+              <span className="text-[18px] font-black">{wishlistProducts.length}</span>
+              <span className="text-[10px] text-white/80 block uppercase">Wishlist</span>
+            </div>
           </div>
-          <div className="w-px bg-white/20" />
-          <div>
-            <span className="text-[18px] font-black">{wishlistProducts.length}</span>
-            <span className="text-[10px] text-white/80 block uppercase">Wishlist</span>
-          </div>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            className="px-3.5 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold border border-white/30 transition-all cursor-pointer flex items-center gap-1.5"
+            title="Log out back to Landing Page"
+          >
+            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
@@ -99,7 +124,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               : 'bg-white border-[#e6ecf5] hover:bg-[#f1f8f4]'
           }`}
         >
-          <div className="w-9 h-9 rounded-xl bg-[#f1f3ff] text-[#ba1a1a] flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-[#f1f3ff] text-[#006c49] flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[20px]">favorite</span>
           </div>
           <div>
@@ -110,98 +135,99 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
         <button
           onClick={onOpenAddressModal}
-          className="p-3.5 rounded-2xl bg-white hover:bg-[#f1f8f4] border border-[#e6ecf5] text-left transition-all cursor-pointer flex items-center gap-3"
+          className="p-3.5 rounded-2xl border text-left bg-white border-[#e6ecf5] hover:bg-[#f1f8f4] transition-all cursor-pointer flex items-center gap-3"
         >
           <div className="w-9 h-9 rounded-xl bg-[#f1f3ff] text-[#006c49] flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[20px]">pin_drop</span>
           </div>
           <div>
             <span className="text-[12px] font-extrabold text-[#141b2b] block">Addresses</span>
-            <span className="text-[10px] text-[#5b6b62]">Manage locations</span>
+            <span className="text-[10px] text-[#5b6b62]">{currentAddress.locality}, Hyd</span>
           </div>
         </button>
 
         <button
           onClick={onOpenNotifications}
-          className="p-3.5 rounded-2xl bg-white hover:bg-[#f1f8f4] border border-[#e6ecf5] text-left transition-all cursor-pointer flex items-center gap-3"
+          className="p-3.5 rounded-2xl border text-left bg-white border-[#e6ecf5] hover:bg-[#f1f8f4] transition-all cursor-pointer flex items-center gap-3"
         >
           <div className="w-9 h-9 rounded-xl bg-[#f1f3ff] text-[#006c49] flex items-center justify-center shrink-0">
             <span className="material-symbols-outlined text-[20px]">notifications</span>
           </div>
           <div>
-            <span className="text-[12px] font-extrabold text-[#141b2b] block">Alerts</span>
-            <span className="text-[10px] text-[#5b6b62]">Hyderabad offers</span>
+            <span className="text-[12px] font-extrabold text-[#141b2b] block">Notifications</span>
+            <span className="text-[10px] text-[#5b6b62]">Order updates</span>
           </div>
         </button>
       </div>
 
-      {/* Main Section Content */}
+      {/* Orders Section */}
       {activeSection === 'orders' && (
         <div className="flex flex-col gap-4">
-          <h2 className="text-[17px] font-extrabold text-[#141b2b]">
-            Order History & Live Status
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-[17px] font-extrabold text-[#141b2b]">
+              Order History & Tracking
+            </h2>
+            <span className="text-[12px] font-semibold text-[#5b6b62]">
+              {orders.length} Total Orders
+            </span>
+          </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="space-y-4">
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="bg-white rounded-3xl p-4 sm:p-5 border border-[#e6ecf5] shadow-xs flex flex-col gap-3.5"
+                className="bg-white rounded-3xl p-5 border border-[#e6ecf5] shadow-xs space-y-3"
               >
-                {/* Order Meta Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#e6ecf5]">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-extrabold text-[#141b2b]">
-                        Order #{order.id}
-                      </span>
-                      <span
-                        className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase ${
-                          order.status === 'delivered'
-                            ? 'bg-[#caead6] text-[#00422b]'
-                            : 'bg-[#fef08a] text-[#854d0e] animate-pulse'
-                        }`}
-                      >
-                        {order.status === 'delivered' ? '✓ Delivered' : '● Live In Transit'}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-[#5b6b62] mt-0.5">
-                      {order.date} • {order.paymentMethod}
-                    </p>
+                {/* Top status bar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6ecf5] pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[13px] font-black text-[#006c49]">
+                      #{order.id}
+                    </span>
+                    <span className="text-[12px] text-[#5b6b62]">• {order.date}</span>
                   </div>
 
-                  <div className="text-right">
-                    <span className="text-[16px] font-extrabold text-[#141b2b]">
-                      ₹{order.grandTotal}
-                    </span>
-                    <p className="text-[11px] text-[#006c49] font-bold">
-                      {order.items.reduce((a, b) => a + b.quantity, 0)} Items
-                    </p>
-                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                      order.status === 'delivered' || (order.status as string) === 'DELIVERED'
+                        ? 'bg-[#caead6] text-[#00422b]'
+                        : order.status === 'out_for_delivery' || (order.status as string) === 'OUT FOR DELIVERY'
+                        ? 'bg-blue-100 text-blue-800 animate-pulse'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {order.status.replace(/_/g, ' ')}
+                  </span>
                 </div>
 
                 {/* Items preview */}
-                <div className="flex flex-wrap gap-2">
-                  {order.items.map((i) => (
-                    <div
-                      key={i.product.id}
-                      className="flex items-center gap-2 bg-[#f8fafc] px-2.5 py-1.5 rounded-xl border border-[#e6ecf5]"
-                    >
-                      <img
-                        src={i.product.image}
-                        alt={i.product.name}
-                        className="w-7 h-7 object-contain mix-blend-multiply"
-                      />
-                      <span className="text-[11px] font-bold text-[#141b2b] truncate max-w-[140px]">
-                        {i.product.name}
+                <div className="space-y-2">
+                  {order.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-[13px]">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="w-10 h-10 object-cover rounded-xl border border-[#e6ecf5] shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="font-bold text-[#141b2b] block truncate">
+                            {item.product.name}
+                          </span>
+                          <span className="text-[11px] text-[#5b6b62]">
+                            Qty: {item.quantity} • {item.product.weight}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="font-bold text-[#141b2b] shrink-0">
+                        ₹{item.product.price * item.quantity}
                       </span>
-                      <span className="text-[10px] text-[#5b6b62]">×{i.quantity}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Address and Actions */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#e6ecf5]">
                   <span className="text-[11px] text-[#5b6b62]">
                     📍 Delivered to {order.address.locality}, Hyderabad ({order.address.tag})
                   </span>
@@ -212,14 +238,14 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                       onClick={() => onTrackOrder(order)}
                       className="px-4 py-2 rounded-xl bg-[#006c49] hover:bg-[#005236] text-white text-[12px] font-bold shadow-xs cursor-pointer"
                     >
-                      {order.status === 'delivered' ? 'View Details' : 'Track Order ⚡'}
+                      {order.status === 'delivered' || (order.status as string) === 'DELIVERED' ? 'View Receipt' : 'Track Live ⚡'}
                     </button>
                     <button
                       type="button"
                       onClick={() => onReorder(order)}
                       className="px-4 py-2 rounded-xl bg-[#f1f8f4] hover:bg-[#caead6] text-[#00422b] text-[12px] font-bold border border-[#006c49]/30 cursor-pointer"
                     >
-                      Reorder All
+                      Reorder
                     </button>
                   </div>
                 </div>

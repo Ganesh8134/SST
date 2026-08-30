@@ -25,6 +25,7 @@ import {
   INITIAL_CUSTOMERS,
   HYDERABAD_LOCALITIES
 } from './data/products';
+import { LandingPage } from './components/LandingPage';
 import { Header } from './components/Header';
 import { BottomNav, TabType } from './components/BottomNav';
 import { HomeScreen } from './components/screens/HomeScreen';
@@ -41,19 +42,27 @@ import { VoiceSearchModal } from './components/VoiceSearchModal';
 import { Toast } from './components/Toast';
 import { AdminLogin } from './components/admin/AdminLogin';
 import { AdminDashboard } from './components/admin/AdminDashboard';
-import { broadcastRealtimeEvent, subscribeToRealtimeEvents, normalizeOrderStatus } from './utils/realtime';
+import { broadcastRealtimeEvent, subscribeToRealtimeEvents } from './utils/realtime';
 
 export default function App() {
-  // Mode: 'customer' | 'admin'
-  const [viewMode, setViewMode] = useState<'customer' | 'admin'>('customer');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
-  const [showAdminLoginModal, setShowAdminLoginModal] = useState<boolean>(false);
+  // App Navigation Flow: 'landing' (Page 1) | 'store' (Page 2) | 'admin_login' | 'admin_dashboard'
+  const [appFlow, setAppFlow] = useState<'landing' | 'store' | 'admin_login' | 'admin_dashboard'>('landing');
 
-  // Customer Navigation
+  // Customer Authentication State
+  const [isCustomerLoggedIn, setIsCustomerLoggedIn] = useState<boolean>(false);
+  const [customerProfile, setCustomerProfile] = useState<{ name: string; phone: string }>({
+    name: 'Sai Santosh',
+    phone: '+91 98450 12345'
+  });
+
+  // Admin Authentication State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
+
+  // Customer Navigation Tabs (Within Page 2 Store)
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [selectedCategoryId, setSelectedCategoryId] = useState<CategoryId>('dairy');
 
-  // Shared Central Datasets (Real-time synchronized)
+  // Shared Central Datasets (Real-time synchronized between Customer and Admin)
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
@@ -147,7 +156,7 @@ export default function App() {
     }
   }, [orders, trackingOrder]);
 
-  // Cart Helper functions
+  // Cart Handlers
   const handleAddToCart = (product: Product) => {
     if (product.stock !== undefined && product.stock <= 0) {
       setToastMessage(`Sorry, ${product.name} is currently out of stock.`);
@@ -155,7 +164,7 @@ export default function App() {
     }
     const currentQty = cartQuantities[product.id] || 0;
     if (product.stock !== undefined && currentQty >= product.stock) {
-      setToastMessage(`Only ${product.stock} units of ${product.name} available.`);
+      setToastMessage(`Only ${product.stock} units of ${product.name} available in Hyderabad dark store.`);
       return;
     }
 
@@ -272,12 +281,11 @@ export default function App() {
 
   // Confirm order from Customer checkout
   const handleConfirmOrder = (newOrder: Order) => {
-    // Add customer name and phone
     const fullOrder: Order = {
       ...newOrder,
-      customerName: newOrder.customerName || 'Sai Santosh',
-      customerPhone: newOrder.customerPhone || '+91 98450 12345',
-      customerId: newOrder.customerId || 'cust-1'
+      customerName: customerProfile.name,
+      customerPhone: customerProfile.phone,
+      customerId: 'cust-1'
     };
 
     setOrders(prev => [fullOrder, ...prev]);
@@ -291,7 +299,7 @@ export default function App() {
       order: fullOrder
     });
 
-    // Also deduct product stocks
+    // Deduct stock
     fullOrder.items.forEach(item => {
       setProducts(prevProds =>
         prevProds.map(p => {
@@ -316,17 +324,32 @@ export default function App() {
     setToastMessage(`Reordered ${order.items.length} items to cart!`);
   };
 
-  // ADMIN DASHBOARD ACTIONS
+  // Customer Login Success handler (from Landing Page)
+  const handleCustomerLoginSuccess = (info: { name: string; phone: string }) => {
+    setCustomerProfile(info);
+    setIsCustomerLoggedIn(true);
+    setAppFlow('store');
+    setActiveTab('home');
+    setToastMessage(`Welcome back, ${info.name}! Ready for quick Hyderabad grocery delivery.`);
+  };
+
+  // Customer Logout (returns to Page 1 Landing)
+  const handleCustomerLogout = () => {
+    setIsCustomerLoggedIn(false);
+    setAppFlow('landing');
+    setToastMessage('Logged out from Sai Santosh Traders');
+  };
+
+  // Admin Flow Actions
   const handleAdminLoginSuccess = () => {
     setIsAdminLoggedIn(true);
-    setViewMode('admin');
-    setShowAdminLoginModal(false);
+    setAppFlow('admin_dashboard');
     setToastMessage('✓ Authenticated as Sai Santosh Admin');
   };
 
   const handleAdminLogout = () => {
     setIsAdminLoggedIn(false);
-    setViewMode('customer');
+    setAppFlow('landing');
     setToastMessage('Logged out from Admin Hub');
   };
 
@@ -389,6 +412,18 @@ export default function App() {
     );
   }, []);
 
+  const handleAddProduct = (newProduct: Product) => {
+    setProducts(prev => [newProduct, ...prev]);
+  };
+
+  const handleEditProduct = (updatedProduct: Product) => {
+    setProducts(prev => prev.map(p => (p.id === updatedProduct.id ? updatedProduct : p)));
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    setProducts(prev => prev.filter(p => p.id !== productId));
+  };
+
   // Admin Quick Action: Simulate a live incoming customer order from Hyderabad
   const handleAddSimulatedOrder = () => {
     const randomLocality = HYDERABAD_LOCALITIES[Math.floor(Math.random() * HYDERABAD_LOCALITIES.length)];
@@ -443,8 +478,35 @@ export default function App() {
     });
   };
 
-  // IF IN ADMIN MODE & LOGGED IN: Render full Admin Dashboard
-  if (viewMode === 'admin' && isAdminLoggedIn) {
+  // =========================================================================
+  // VIEW 1: PAGE 1 — SAI SANTOSH TRADERS LANDING + CUSTOMER LOGIN
+  // =========================================================================
+  if (appFlow === 'landing') {
+    return (
+      <LandingPage
+        categories={CATEGORIES}
+        onCustomerLoginSuccess={handleCustomerLoginSuccess}
+        onOpenAdminLogin={() => setAppFlow('admin_login')}
+      />
+    );
+  }
+
+  // =========================================================================
+  // VIEW 2: ADMIN LOGIN (SEPARATE FROM CUSTOMER APP)
+  // =========================================================================
+  if (appFlow === 'admin_login') {
+    return (
+      <AdminLogin
+        onLoginSuccess={handleAdminLoginSuccess}
+        onCancel={() => setAppFlow('landing')}
+      />
+    );
+  }
+
+  // =========================================================================
+  // VIEW 3: ADMIN DASHBOARD (AFTER SUCCESSFUL ADMIN AUTHENTICATION)
+  // =========================================================================
+  if (appFlow === 'admin_dashboard') {
     return (
       <AdminDashboard
         orders={orders}
@@ -453,33 +515,33 @@ export default function App() {
         onUpdateOrderStatus={handleUpdateOrderStatus}
         onUpdateProductStock={handleUpdateProductStock}
         onUpdateProductPrice={handleUpdateProductPrice}
+        onAddProduct={handleAddProduct}
+        onEditProduct={handleEditProduct}
+        onDeleteProduct={handleDeleteProduct}
         onLogout={handleAdminLogout}
-        onSwitchToCustomerStore={() => setViewMode('customer')}
+        onSwitchToCustomerStore={() => setAppFlow('store')}
         onAddSimulatedOrder={handleAddSimulatedOrder}
       />
     );
   }
 
+  // =========================================================================
+  // VIEW 4: PAGE 2 — GROCERY SHOPPING STORE (AFTER CUSTOMER LOGIN)
+  // =========================================================================
   return (
     <div className="min-h-screen bg-[#f8fafc] text-[#141b2b] flex flex-col items-center justify-start selection:bg-[#caead6] selection:text-[#00422b]">
-      {/* Top Header */}
+      {/* Top Customer Header */}
       <Header
         currentAddress={currentAddress}
+        customerName={customerProfile.name}
         onOpenAddressModal={() => setIsAddressModalOpen(true)}
         onOpenNotifications={() => setIsNotificationsModalOpen(true)}
         onOpenProfile={() => setActiveTab('profile')}
-        onOpenAdmin={() => {
-          if (isAdminLoggedIn) {
-            setViewMode('admin');
-          } else {
-            setShowAdminLoginModal(true);
-          }
-        }}
-        isAdminLoggedIn={isAdminLoggedIn}
+        onLogout={handleCustomerLogout}
         notifications={notifications}
       />
 
-      {/* Main Screen Router */}
+      {/* Main Screen Router for Customer Store */}
       <main className="flex-1 pt-18 sm:pt-20 w-full">
         {activeTab === 'home' && (
           <HomeScreen
@@ -549,6 +611,8 @@ export default function App() {
         {activeTab === 'profile' && (
           <ProfileScreen
             currentAddress={currentAddress}
+            customerName={customerProfile.name}
+            customerPhone={customerProfile.phone}
             orders={orders}
             wishlistProducts={wishlistedProducts}
             cartItemsMap={cartQuantities}
@@ -560,11 +624,12 @@ export default function App() {
             onRemoveFromCart={handleRemoveFromCart}
             onOpenDetails={(p) => setSelectedProductDetails(p)}
             onToggleWishlist={handleToggleWishlist}
+            onLogout={handleCustomerLogout}
           />
         )}
       </main>
 
-      {/* Fixed Bottom Navigation */}
+      {/* Fixed Bottom Navigation (Customer Mobile Navigation) */}
       <BottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -652,14 +717,6 @@ export default function App() {
           setActiveTab('search');
         }}
       />
-
-      {/* Admin Login Modal */}
-      {showAdminLoginModal && (
-        <AdminLogin
-          onSuccess={handleAdminLoginSuccess}
-          onCancel={() => setShowAdminLoginModal(false)}
-        />
-      )}
     </div>
   );
 }
